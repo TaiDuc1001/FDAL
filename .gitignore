@@ -1,3 +1,38 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+.github/instructions
+*.pt
+mobileclip_blt.ts
+runs/
+experiments/
+experiments_2/
+experiments_*
+
+datasets/
+*.log
+
+*.txt
+!files_to_delete.txt
+
+to_delete*.log
+to_delete*/
+
+temp*
+*.zip
+.env
+wandb
+
+!yolo11n_coco_starter.pt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
