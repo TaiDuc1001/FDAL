@@ -1,0 +1,8 @@
+rm -rf experiments*/*/*/train/yolo*/weights/*.pt
+rm -rf experiments*/*/*/train/yolo*/*.jpg
+rm -rf experiments*/*/*/train/yolo*/*.png
+rm -rf experiments*/*/*/*/train
+rm -rf experiments*/*/*/*/val
+rm -rf experiments*/*/*/alfamix_crops
+rm -rf experiments*/*/new_labels
+rm -rf experiments*/*/*/labels/*.cache
