@@ -1,4 +1,4 @@
-# ALFI: Active Learning from Feature Instability
+# FeDAL: Active Learning from Feature Instability
 
 **Official implementation** of the paper "From Object Instability to Image Uncertainty: A Strategy for Active Learning in Object Detection"
 
@@ -10,11 +10,11 @@
 
 ## 📖 About
 
-ALFI (Active Learning from Feature Instability) introduces a novel uncertainty estimation approach based on feature instability for active learning in object detection. This repository provides the complete implementation along with support for multiple established active learning strategies and datasets.
+FeDAL (Active Learning from Feature Instability) introduces a novel uncertainty estimation approach based on feature instability for active learning in object detection. This repository provides the complete implementation along with support for multiple established active learning strategies and datasets.
 
 ### Key Features
 
-- 🚀 **State-of-the-art ALFI Strategy**: Our novel feature instability-based approach
+- 🚀 **State-of-the-art FeDAL Strategy**: Our novel feature instability-based approach
 - 📊 **Multiple AL Strategies**: Uncertainty-based, diversity-based, and hybrid methods
 - 🎯 **Multi-Dataset Support**: COCO, VOC, Cityscapes, KITTI
 - ⚡ **YOLO Integration**: Built on ultralytics YOLO models
@@ -33,8 +33,8 @@ ALFI (Active Learning from Feature Instability) introduces a novel uncertainty e
 
 1. **Clone the repository**:
 ```bash
-git clone https://github.com/TaiDuc1001/ALFI.git
-cd ALFI
+git clone https://github.com/TaiDuc1001/FeDAL.git
+cd FeDAL
 ```
 
 2. **Install with uv** (recommended):
@@ -65,8 +65,8 @@ uv run python scripts/down_data.py --dataset VOC
 ### Run Your First Experiment
 
 ```bash
-# Run ALFI strategy on VOC dataset
-uv run python scripts/run_experiment.py --config configs/voc/config_alfi.yaml
+# Run FeDAL strategy on VOC dataset
+uv run python scripts/run_experiment.py --config configs/voc/config_fedal.yaml
 
 # Run baseline random sampling for comparison
 uv run python scripts/run_experiment.py --config configs/voc/config_random.yaml
@@ -75,7 +75,7 @@ uv run python scripts/run_experiment.py --config configs/voc/config_random.yaml
 ## 🧠 Supported Active Learning Strategies
 
 ### Our Method
-- **ALFI** 🌟: Active Learning from Feature Instability (our paper's contribution)
+- **FeDAL** 🌟: Active Learning from Feature Instability (our paper's contribution)
 
 ### Uncertainty-based Strategies
 - **Entropy**: Prediction entropy-based selection
@@ -95,7 +95,7 @@ uv run python scripts/run_experiment.py --config configs/voc/config_random.yaml
 ## 📂 Project Structure
 
 ```
-ALFI/
+FeDAL/
 ├── configs/                    # Experiment configurations
 │   ├── coco/                  # COCO dataset configs
 │   ├── voc/                   # VOC dataset configs
@@ -126,7 +126,7 @@ ALFI/
 
 ```bash
 # Run an experiment with default settings
-uv run python scripts/run_experiment.py --config configs/voc/config_alfi.yaml
+uv run python scripts/run_experiment.py --config configs/voc/config_fedal.yaml
 ```
 
 ### Custom Configuration
@@ -134,7 +134,7 @@ uv run python scripts/run_experiment.py --config configs/voc/config_alfi.yaml
 ```bash
 # Override specific parameters
 uv run python scripts/run_experiment.py \
-    --config configs/voc/config_alfi.yaml \
+    --config configs/voc/config_fedal.yaml \
     --epochs 50 \
     --batch_size 32 \
     --max_rounds 5 \
@@ -145,14 +145,14 @@ uv run python scripts/run_experiment.py \
 
 ```bash
 # Run multiple strategies for comparison
-uv run python scripts/run_experiment.py --config configs/voc/config_alfi.yaml
+uv run python scripts/run_experiment.py --config configs/voc/config_fedal.yaml
 uv run python scripts/run_experiment.py --config configs/voc/config_entropy.yaml
 uv run python scripts/run_experiment.py --config configs/voc/config_random.yaml
 
 # Generate comparison plots
 uv run python scripts/utils.py compare \
-    experiments/alfi_exp experiments/entropy_exp experiments/random_exp \
-    --names ALFI Entropy Random
+    experiments/fedal_exp experiments/entropy_exp experiments/random_exp \
+    --names FeDAL Entropy Random
 ```
 
 ### Individual Components
@@ -167,7 +167,7 @@ uv run python scripts/train.py \
 # Run strategy selection only
 uv run python scripts/strategy.py \
     --dataset_yaml datasets/VOC/data.yaml \
-    --strategy alfi \
+    --strategy fedal \
     --model path/to/model.pt \
     --num_samples 414
 ```
@@ -177,14 +177,14 @@ uv run python scripts/strategy.py \
 Each strategy has its own configuration file in `configs/`. Here's an example from the actual codebase:
 
 ```yaml
-# configs/voc/config_alfi.yaml
+# configs/voc/config_fedal.yaml
 dataset_yaml: "datasets/VOC/data.yaml"
 epochs: 26
 batch_size: 16
 val_batch_size: 256
 imgsz: 640
 device: ['0']
-strategy: "alfi"
+strategy: "fedal"
 model_name: "yolo11s.pt"
 initial_labeled_count: 828
 max_rounds: 7
@@ -192,7 +192,7 @@ samples_per_round: 414
 num_inference: 6000
 
 strategy_args:
-  alfi:
+  fedal:
     supporter: "resnet18"
     supporter_epochs: 5
     supporter_batch_size: 1000000
@@ -229,9 +229,9 @@ uv run python scripts/utils.py plot experiments/your_exp/results.json
 uv run python scripts/utils.py report experiments/your_exp
 ```
 
-## 🎯 ALFI Method Details
+## 🎯 FeDAL Method Details
 
-Our ALFI strategy leverages **feature instability** to identify the most informative samples:
+Our FeDAL strategy leverages **feature instability** to identify the most informative samples:
 
 1. **Feature Extraction**: Extract features from multiple layers of the trained model
 2. **Instability Measurement**: Compute feature instability using supporter networks
@@ -249,10 +249,10 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 <!-- ## 📚 Citation
 
-If you use ALFI in your research, please cite our paper:
+If you use FeDAL in your research, please cite our paper:
 
 ```bibtex
-@article{alfi2024,
+@article{fedal2024,
   title={Active Learning from Feature Instability},
   author={TaiDuc1001},
   journal={arXiv preprint arXiv:xxxx.xxxxx},

@@ -1,6 +1,6 @@
 from .entropy import EntropyStrategy
 from .margin import MarginStrategy
-from .alfi import ALFI
+from .fedal import FeDAL
 from .dcus import DCUSStrategy
 
-__all__ = ["EntropyStrategy", "MarginStrategy", "ALFI", "DCUSStrategy"]
+__all__ = ["EntropyStrategy", "MarginStrategy", "FeDAL", "DCUSStrategy"]

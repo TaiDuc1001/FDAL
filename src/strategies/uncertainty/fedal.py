@@ -242,7 +242,7 @@ def train_ddp_worker_standalone(rank: int, labeled_crop_info: Dict[str, Any], dd
             dist.destroy_process_group()
 
 
-class ALFI(BaseStrategy):
+class FeDAL(BaseStrategy):
     def __init__(self,
                  model,
                  supporter: str = "resnet18",
@@ -302,10 +302,10 @@ class ALFI(BaseStrategy):
             print(f"Warning: train_ddp=True but only {len(self.devices)} device(s) available. Falling back to single device training.")
         
         if self.use_ddp:
-            print(f"ALFI will use DDP training with {len(self.devices)} devices: {self.devices}")
+            print(f"FeDAL will use DDP training with {len(self.devices)} devices: {self.devices}")
             print(f"DDP config: master_addr={self.master_addr}, master_port={self.master_port}, backend={self.backend}")
         else:
-            print(f"ALFI will use single device training on: {self.device}")
+            print(f"FeDAL will use single device training on: {self.device}")
         
     def _setup_devices(self, device: Union[str, List[str]]) -> List[torch.device]:
         if isinstance(device, list):
@@ -362,7 +362,7 @@ class ALFI(BaseStrategy):
         unlabeled_image_paths = self._get_image_paths_for_indices(unlabeled_indices, image_paths)
         unlabeled_image_paths = unlabeled_image_paths if num_inf < 0 else unlabeled_image_paths[:num_inf]
         
-        print(f"Running ALFI strategy on {len(unlabeled_image_paths)} unlabeled images...")
+        print(f"Running FeDAL strategy on {len(unlabeled_image_paths)} unlabeled images...")
         
         print("Step 1: Running YOLO inference for object detection...")
         start_time = time.time()
@@ -393,14 +393,14 @@ class ALFI(BaseStrategy):
             train_end_time = time.time()
             train_time = train_end_time - train_start_time
             
-            print("Step 5: Applying ALFI selection algorithm...")
+            print("Step 5: Applying FeDAL selection algorithm...")
             selected_local_indices = self._apply_alfi_selection(
                 crop_info, unlabeled_image_paths, n_samples, labeled_crop_info=labeled_crop_info, **kwargs
             )
             end_time = time.time()
             num_ulbl_images = len(unlabeled_image_paths)
             time_per_image = (end_time - start_time - train_time) / num_ulbl_images if num_ulbl_images > 0 else 0
-            print(f"ALFI selection completed in {end_time - start_time:.2f}s, num images: {num_ulbl_images}, time per image: {time_per_image:.4f}s")
+            print(f"FeDAL selection completed in {end_time - start_time:.2f}s, num images: {num_ulbl_images}, time per image: {time_per_image:.4f}s")
             with open(timelog_file, 'a') as f:
                 f.write(f"{self.round},{end_time - start_time:.2f},{num_ulbl_images},{time_per_image:.4f}\n")
             print("Write to time log file. ", timelog_file.absolute())

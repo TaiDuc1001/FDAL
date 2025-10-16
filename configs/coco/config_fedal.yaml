@@ -9,11 +9,11 @@ master_addr: "localhost"
 master_port: 12355
 backend: "nccl"
 patience: 50
-experiments_root: "full_experiments/experiments_1210/coco_alfi"
-proctitle_midstr: "coco_alfi"
+experiments_root: "full_experiments/experiments_1210/coco_fedal"
+proctitle_midstr: "coco_fedal"
 proctitle_endstr_of: "seed"
 seed: 1
-strategy: "alfi"
+strategy: "fedal"
 model_name: "yolo11s.yaml"
 initial_labeled_count: 5914
 max_rounds: 7
@@ -21,7 +21,7 @@ samples_per_round: 2957
 num_inference: 6000
 
 strategy_args:
-  alfi:
+  fedal:
     supporter: "resnet18"
     supporter_epochs: 5
     supporter_batch_size: 1000000

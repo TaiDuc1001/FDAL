@@ -1,7 +1,7 @@
-dataset_yaml: "datasets/Cityscapes/data.yaml"
+dataset_yaml: "datasets/VOC/data.yaml"
 epochs: 26
 batch_size: 16
-val_batch_size: 64
+val_batch_size: 256
 imgsz: 640
 device: ['0']
 train_ddp: False
@@ -9,19 +9,19 @@ master_addr: "localhost"
 master_port: 12355
 backend: "nccl"
 patience: 50
-experiments_root: "full_experiments/experiments_1210/cityscapes_alfi"
-proctitle_midstr: "cityscapes_alfi"
+experiments_root: "full_experiments/experiments_1210/voc_fedal"
+proctitle_midstr: "voc_fedal"
 proctitle_endstr_of: "seed"
 seed: 1
-strategy: "alfi"
-model_name: "yolo11n.pt"
-initial_labeled_count: 149 # 5% of 2975
+strategy: "fedal"
+model_name: "yolo11s.pt"
+initial_labeled_count: 828
 max_rounds: 7
-samples_per_round: 75 # 2.5% of 2975
+samples_per_round: 414
 num_inference: 6000
 
 strategy_args:
-  alfi:
+  fedal:
     supporter: "resnet18"
     supporter_epochs: 5
     supporter_batch_size: 1000000
@@ -31,3 +31,4 @@ strategy_args:
     lambda_hyp: 0.99
     supporter_embedding_size: 32
     supporter_imgsz: 320
+    one_alpha_cap: False
