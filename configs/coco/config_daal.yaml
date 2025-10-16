@@ -1,0 +1,26 @@
+dataset_yaml: "datasets/coco/data.yaml"
+epochs: 26
+batch_size: 32
+val_batch_size: 256
+imgsz: 640
+device: "0"
+patience: 50
+experiments_root: "full_experiments/experiments_1210/coco_daal"
+proctitle_midstr: "coco_daal"
+proctitle_endstr_of: "seed"
+seed: 42
+strategy: "daal"
+model_name: "yoloe-11s-seg.pt"
+initial_labeled_count: 5914
+samples_per_round: 5914
+max_rounds: 7
+num_inference: 2000
+
+strategy_args:
+  daal:
+    entropy_weight: 0.4 # alpha
+    confidence_weight: 0.6 # (1-alpha)
+    min_detections: 1
+    low_confidence_weight: 0.4 # (beta)
+    variance_weight: 0.6 # (1-beta)
+    k: 10.0

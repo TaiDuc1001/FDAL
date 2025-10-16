@@ -1,0 +1,33 @@
+dataset_yaml: "datasets/KITTI/data.yaml"
+epochs: 26
+batch_size: 32
+val_batch_size: 64
+imgsz: 640
+device: ['0']
+train_ddp: False
+master_addr: "localhost"
+master_port: 12355
+backend: "nccl"
+patience: 50
+experiments_root: "full_experiments/experiments_1210/kitti_alfi"
+proctitle_midstr: "kitti_alfi"
+proctitle_endstr_of: "seed"
+seed: 1
+strategy: "alfi"
+model_name: "yolo11n.pt"
+initial_labeled_count: 300 # 5% of 5984, 187 for 5% of 3740
+max_rounds: 7
+samples_per_round: 150 # 2.5% of 5984, 94 for 2.5% of 3740
+num_inference: 6000
+
+strategy_args:
+  alfi:
+    supporter: "resnet18"
+    supporter_epochs: 5
+    supporter_batch_size: 1000000
+    learn_alpha: True
+    alpha_cap: 0.03125
+    alpha_learning_rate: 0.1
+    lambda_hyp: 0.99
+    supporter_embedding_size: 32
+    supporter_imgsz: 320

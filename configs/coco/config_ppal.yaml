@@ -1,0 +1,35 @@
+dataset_yaml: "datasets/COCO/data.yaml"
+epochs: 26
+batch_size: 32
+val_batch_size: 256
+imgsz: 640
+device: ['0']
+train_ddp: False
+master_addr: "localhost"
+master_port: 12355
+backend: "nccl"
+patience: 50
+experiments_root: "full_experiments/experiments_1210/coco_ppal"
+proctitle_midstr: "coco_ppal"
+proctitle_endstr_of: "seed"
+seed: 1
+strategy: ["dcus", "ccms"]
+expand_ratios: [4.0]
+model_name: "yolo11s.yaml"
+initial_labeled_count: 5914
+max_rounds: 7
+samples_per_round: 2957
+num_inference: 6000
+
+strategy_args:
+  dcus:
+    momentum: 0.99
+    xi: 0.6
+    alpha: 0.2
+    beta: 0.2
+    
+  ccms:
+    feature_layers: ["model.9", "model.10"]
+    distance_metric: "euclidean"
+    num_clusters: None
+    k_medoids_iters: 20
