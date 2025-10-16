@@ -1,4 +1,4 @@
-# FeDAL: Active Learning from Feature Instability
+# FeDAL: Feature Difficulty in Active Learning
 
 **Official implementation** of the paper "From Object Instability to Image Uncertainty: A Strategy for Active Learning in Object Detection"
 
@@ -10,7 +10,7 @@
 
 ## 📖 About
 
-FeDAL (Active Learning from Feature Instability) introduces a novel uncertainty estimation approach based on feature instability for active learning in object detection. This repository provides the complete implementation along with support for multiple established active learning strategies and datasets.
+FeDAL (Feature Difficulty in Active Learning) introduces a novel uncertainty estimation approach based on feature instability for active learning in object detection. This repository provides the complete implementation along with support for multiple established active learning strategies and datasets.
 
 ### Key Features
 
@@ -75,7 +75,7 @@ uv run python scripts/run_experiment.py --config configs/voc/config_random.yaml
 ## 🧠 Supported Active Learning Strategies
 
 ### Our Method
-- **FeDAL** 🌟: Active Learning from Feature Instability (our paper's contribution)
+- **FeDAL** 🌟: Feature Difficulty in Active Learning (our paper's contribution)
 
 ### Uncertainty-based Strategies
 - **Entropy**: Prediction entropy-based selection
@@ -253,7 +253,7 @@ If you use FeDAL in your research, please cite our paper:
 
 ```bibtex
 @article{fedal2024,
-  title={Active Learning from Feature Instability},
+  title={Feature Difficulty in Active Learning},
   author={TaiDuc1001},
   journal={arXiv preprint arXiv:xxxx.xxxxx},
   year={2024}
