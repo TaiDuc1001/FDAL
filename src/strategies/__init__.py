@@ -1,6 +1,6 @@
 from .base import BaseStrategy
 from .random import RandomStrategy
-from .uncertainty import EntropyStrategy, MarginStrategy, FeDAL, DCUSStrategy
+from .uncertainty import EntropyStrategy, MarginStrategy, FDAL, DCUSStrategy
 from .diversity import CoreSetStrategy, CCMSStrategy
 from .intrinsic import BADGEStrategy, CDALStrategy, DivProtoStrategy
 
@@ -13,7 +13,7 @@ __all__ = [
     "BADGEStrategy",
     "CDALStrategy",
     "DivProtoStrategy",
-    "FeDAL",
+    "FDAL",
     "CCMSStrategy",
     "DCUSStrategy",
 ]

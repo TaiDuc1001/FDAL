@@ -40,7 +40,7 @@ def parse_args():
     parser.add_argument('--max_rounds', type=int, help='Override max_rounds')
     parser.add_argument('--samples_per_round', type=int, help='Override samples_per_round')
     parser.add_argument('--num_inference', type=int, help='Num images to run inference, -1 for full dataset')
-    parser.add_argument('--override', action='append', help='Override nested config keys, e.g., --override strategy_args.fedal.supporter_embedding_size=512')
+    parser.add_argument('--override', action='append', help='Override nested config keys, e.g., --override strategy_args.fdal.supporter_embedding_size=512')
 
     return parser.parse_args()
 

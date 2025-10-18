@@ -29,7 +29,7 @@ from src.strategies import (
     DCUSStrategy,
     CDALStrategy,
     DivProtoStrategy,
-    FeDAL
+    FDAL
 )
 from scripts.utils import create_model
 
@@ -104,8 +104,8 @@ def create_strategy(strategy_name: str, model: BaseModel, **kwargs):
         return CoreSetStrategy(model, **kwargs)
     elif strategy_name == 'badge':
         return BADGEStrategy(model, **kwargs)
-    elif strategy_name == 'fedal':
-        return FeDAL(model, **kwargs)
+    elif strategy_name == 'fdal':
+        return FDAL(model, **kwargs)
     elif strategy_name == 'ccms':
         return CCMSStrategy(model, **kwargs)
     elif strategy_name == 'dcus':

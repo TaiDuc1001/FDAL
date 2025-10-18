@@ -136,12 +136,12 @@ class DCUSStrategy(BaseStrategy):
     def _ensure_classwise_quality(self):
         model_to_read = self.model.model.module if hasattr(self.model.model, "module") else self.model.model # type: ignore
         if self.experiment_dir:
-            fedal_quality_path = Path(self.experiment_dir) / f"round_{self.round}" / "fedal_classwise_quality.npy"
+            fdal_quality_path = Path(self.experiment_dir) / f"round_{self.round}" / "fdal_classwise_quality.npy"
             last_ckpt_path = next((Path(self.experiment_dir) / f"round_{self.round}" / 'train').glob("*/weights/last.pt"))
             classwise_quality_npy_path = next((Path(self.experiment_dir) / f"round_{self.round}" / 'train').glob("*/weights/classwise_quality.npy"))
             
-            if fedal_quality_path.exists():
-                classwise_quality = np.load(fedal_quality_path)
+            if fdal_quality_path.exists():
+                classwise_quality = np.load(fdal_quality_path)
                 setattr(model_to_read, "classwise_quality", torch.tensor(classwise_quality, dtype=torch.float32))
             elif classwise_quality_npy_path.exists():
                 classwise_quality = np.load(classwise_quality_npy_path)
@@ -149,7 +149,7 @@ class DCUSStrategy(BaseStrategy):
             elif last_ckpt_path.exists():
                 restore_classwise_quality(self.model.model, last_ckpt_path)
             else:
-                logger.warning(f"Neither FeDAL quality file ({fedal_quality_path}), "
+                logger.warning(f"Neither FDAL quality file ({fdal_quality_path}), "
                               f"numpy quality file ({classwise_quality_npy_path}), nor "
                               f"checkpoint ({last_ckpt_path}) found. Initializing with zeros.")
                 nc = getattr(model_to_read, 'nc', 20)
