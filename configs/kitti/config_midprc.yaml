@@ -9,13 +9,22 @@ master_addr: "localhost"
 master_port: 12355
 backend: "nccl"
 patience: 50
-experiments_root: "full_experiments/experiments_3010/kitti_random"
-proctitle_midstr: "kitti_random"
+experiments_root: "full_experiments/experiments_0301/kitti_midprc"
+proctitle_midstr: "kitti_midprc"
 proctitle_endstr_of: "seed"
 seed: 1
-strategy: "random"
+strategy: "midprc"
 model_name: "yolo11n.pt"
 initial_labeled_count: 300 # 5% of 5984, 187 for 5% of 3740
 max_rounds: 7
 samples_per_round: 150 # 2.5% of 5984, 94 for 2.5% of 3740
 num_inference: 6000
+
+strategy_args:
+  midprc:
+    epsilon: 5.0
+    lambda_weight: 1.0
+    conf_threshold: 0.05
+    iou_threshold: 0.5
+    similarity_threshold: 0.85
+    feature_dim: 512

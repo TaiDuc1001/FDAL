@@ -86,6 +86,21 @@ class CCMSStrategy(BaseStrategy):
             f.write(','.join(selected_image_names) + '\n')
         print("Write to selection log file. ", selectionlog_file.absolute())
         
+        self._save_predictions_for_selection(
+            experiment_dir=self.experiment_dir,
+            round_num=self.round,
+            selected_image_paths=selected_image_paths,
+            image_paths=image_paths,
+            selected_indices=selected_indices,
+            results=results,
+            unlabeled_indices=processed_indices,
+        )
+        self._save_selection_symlinks(
+            experiment_dir=self.experiment_dir,
+            round_num=self.round,
+            selected_image_paths=selected_image_paths,
+        )
+        
         total_time = time.time() - start_time
         time_per_image = total_time / len(unlabeled_image_paths)
         with open(timelog_file, 'a') as f:

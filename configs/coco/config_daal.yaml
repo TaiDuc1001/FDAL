@@ -5,7 +5,7 @@ val_batch_size: 256
 imgsz: 640
 device: "0"
 patience: 50
-experiments_root: "full_experiments/experiments_1210/coco_daal"
+experiments_root: "full_experiments/experiments_3010/coco_daal"
 proctitle_midstr: "coco_daal"
 proctitle_endstr_of: "seed"
 seed: 42

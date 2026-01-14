@@ -17,19 +17,20 @@ logger.info(f"[strategy.py] CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from src.data.manager import DataManager
-from src.models.base import BaseModel
-from src.strategies import (
+from aida.data.manager import DataManager
+from aida.models.base import BaseModel
+from aida.strategies import (
     RandomStrategy,
     EntropyStrategy, 
     MarginStrategy,
     CoreSetStrategy,
     BADGEStrategy,
+    FDAL,
     CCMSStrategy,
     DCUSStrategy,
     CDALStrategy,
     DivProtoStrategy,
-    FDAL
+    MIDPRCStrategy
 )
 from scripts.utils import create_model
 
@@ -44,8 +45,8 @@ def parse_args():
                        help='Model path or name')
     parser.add_argument('--num_samples', type=int, default=100,
                        help='Number of samples to select')
-    parser.add_argument('--num_inference', type=int, default=-1,
-                       help='Number of images to run inference, -1 for full dataset')
+    parser.add_argument('--num_inference', type=str, default='-1',
+                       help='Number of images to run inference, -1 for full dataset, or path to folder of images')
     parser.add_argument('--experiment_dir', type=str,
                        help='Path to existing experiment directory')
     parser.add_argument('--round', type=int, default=0,
@@ -114,6 +115,8 @@ def create_strategy(strategy_name: str, model: BaseModel, **kwargs):
         return CDALStrategy(model, **kwargs)
     elif strategy_name == 'divproto':
         return DivProtoStrategy(model, **kwargs)
+    elif strategy_name == 'midprc':
+        return MIDPRCStrategy(model, **kwargs)
     else:
         raise ValueError(f"Unknown strategy: {strategy_name}")
 
@@ -307,6 +310,24 @@ def main():
     unlabeled_indices = data_manager.get_unlabeled_indices()
     all_image_paths = data_manager.get_all_image_paths()
     
+    num_inference = args.num_inference
+    if num_inference and os.path.isdir(num_inference):
+        inference_folder = Path(num_inference)
+        inference_image_names = {p.stem for p in inference_folder.glob("*") if p.suffix.lower() in ('.jpg', '.jpeg', '.png')}
+        logger.info(f"Using {len(inference_image_names)} images from inference folder: {inference_folder}")
+        
+        filtered_indices = []
+        for idx in unlabeled_indices:
+            img_name = Path(all_image_paths[idx]).stem
+            if img_name in inference_image_names:
+                filtered_indices.append(idx)
+        
+        unlabeled_indices = np.array(filtered_indices)
+        logger.info(f"Filtered to {len(unlabeled_indices)} matching unlabeled images")
+        num_inference_int = -1
+    else:
+        num_inference_int = int(num_inference)
+    
     if len(unlabeled_indices) == 0:
         logger.info("No unlabeled samples available")
         return
@@ -332,7 +353,7 @@ def main():
             unlabeled_indices=unlabeled_indices,
             all_image_paths=all_image_paths,
             final_n_samples=args.num_samples,
-            num_inference=args.num_inference,
+            num_inference=num_inference_int,
             config=config
         )
         

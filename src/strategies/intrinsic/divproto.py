@@ -119,6 +119,16 @@ class DivProtoStrategy(BaseStrategy):
             f.write(','.join(selected_image_names) + '\n')
         print("Write to selection log file. ", selectionlog_file.absolute())
         
+        self._save_predictions_for_selection(
+            experiment_dir=self.experiment_dir,
+            round_num=self.round,
+            selected_image_paths=selected_image_paths,
+            image_paths=image_paths,
+            selected_indices=selected_indices,
+            results=results,
+            unlabeled_indices=unlabeled_indices,
+        )
+        
         print(f"DivProto Strategy: Selected {len(selected_indices)} samples from {len(unlabeled_indices)} unlabeled images")
         return selected_indices
     

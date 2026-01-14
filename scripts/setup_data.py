@@ -1,3 +1,4 @@
+import os
 import argparse
 import sys
 from pathlib import Path
@@ -8,7 +9,7 @@ load_dotenv(dotenv_path=Path(__file__).parent.parent / '.env.training')
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from src.data.manager import DataManager
+from aida.data.manager import DataManager
 
 
 def parse_args():
@@ -17,7 +18,7 @@ def parse_args():
                         help='Path to dataset YAML (preferred). If provided, --dataset_path/--dataset_name/--class_names* are optional')
     parser.add_argument('--initial_count', type=int, required=True)
     parser.add_argument('--experiments_root', type=str, default='experiments')
-    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--seed', type=str, default='42')
     parser.add_argument('--model_name', type=str, default='yolo')
     parser.add_argument('--strategy', type=str, default='experiment',
                        help='Strategy name (can be comma-separated for chaining)')
@@ -66,8 +67,22 @@ def main():
     if len(training_indices) < args.initial_count:
         raise ValueError(f"Not enough training images. Found {len(training_indices)}, need {args.initial_count}")
     
-    np.random.seed(args.seed)
-    initial_indices = np.random.choice(training_indices, size=args.initial_count, replace=False)
+    if args.seed and os.path.isdir(args.seed):
+        seed_folder = Path(args.seed)
+        image_names = {p.stem for p in seed_folder.glob("*") if p.suffix.lower() in ('.jpg', '.jpeg', '.png')}
+        print(f"Using {len(image_names)} images from seed folder: {seed_folder}")
+        
+        initial_indices = []
+        for i in training_indices:
+            img_name = data_manager.original_dataset.all_images[i].stem
+            if img_name in image_names:
+                initial_indices.append(i)
+        
+        initial_indices = np.array(initial_indices[:args.initial_count])
+        print(f"Matched {len(initial_indices)} images from dataset")
+    else:
+        np.random.seed(int(args.seed))
+        initial_indices = np.random.choice(training_indices, size=args.initial_count, replace=False)
     
     # Parse strategy name for directory naming
     if '-' in args.strategy:

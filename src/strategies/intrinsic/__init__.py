@@ -1,6 +1,6 @@
 from .badge import BADGEStrategy
-from .aac import AACStrategy
 from .cdal import CDALStrategy
 from .divproto import DivProtoStrategy
+from .midprc import MIDPRCStrategy
 
-__all__ = ["BADGEStrategy", "AACStrategy", "CDALStrategy", "DivProtoStrategy"]
+__all__ = ["BADGEStrategy", "CDALStrategy", "DivProtoStrategy", "MIDPRCStrategy"]

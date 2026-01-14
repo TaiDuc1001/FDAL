@@ -33,13 +33,13 @@ def parse_args():
     parser.add_argument('--device', type=str, help='Override device (can be single device or comma-separated list for multiple GPUs)')
     parser.add_argument('--patience', type=int, help='Override patience')
     parser.add_argument('--experiments_root', type=str, help='Override experiments_root')
-    parser.add_argument('--seed', type=int, help='Override seed')
+    parser.add_argument('--seed', type=str, help='Override seed (int or path to folder)')
     parser.add_argument('--strategy', type=str, help='Override strategy (can be single strategy or comma-separated for chaining)')
     parser.add_argument('--model_name', type=str, help='Override model_name')
     parser.add_argument('--initial_labeled_count', type=int, help='Override initial_labeled_count')
     parser.add_argument('--max_rounds', type=int, help='Override max_rounds')
     parser.add_argument('--samples_per_round', type=int, help='Override samples_per_round')
-    parser.add_argument('--num_inference', type=int, help='Num images to run inference, -1 for full dataset')
+    parser.add_argument('--num_inference', type=str, help='Num images to run inference, -1 for full dataset, or path to folder')
     parser.add_argument('--override', action='append', help='Override nested config keys, e.g., --override strategy_args.fdal.supporter_embedding_size=512')
 
     return parser.parse_args()
@@ -415,6 +415,7 @@ def main():
     try:
         experiment_dir = run_data_setup(config)
         logger.info(f"Initialized experiment in: {experiment_dir}")
+        logger.info(f"Initial selection log: {Path(experiment_dir) / 'selection_log.txt'}")
     except Exception as e:
         logger.exception(f"Failed to initialize experiment: {e}")
         return 1

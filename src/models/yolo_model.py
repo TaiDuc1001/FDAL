@@ -89,6 +89,108 @@ class YOLOModel(BaseModel):
         for hook in self._hooks:
             hook.remove()
         self._hooks = []
+
+    def get_box_features(
+        self, 
+        boxes: np.ndarray, 
+        image_size: tuple = (640, 640),
+        feature_layer: str = "model.15"
+    ) -> torch.Tensor:
+        if boxes is None or len(boxes) == 0:
+            return torch.zeros((0, 256))
+        
+        if feature_layer not in self._feature_maps:
+            available = list(self._feature_maps.keys())
+            if available:
+                feature_layer = available[-1]
+            else:
+                return torch.zeros((len(boxes), 256))
+        
+        feature_map = self._feature_maps[feature_layer]
+        if feature_map is None:
+            return torch.zeros((len(boxes), 256))
+        
+        img_h, img_w = image_size
+        device = feature_map.device
+        
+        boxes_t = torch.tensor(boxes, dtype=torch.float32, device=device)
+        cx = (boxes_t[:, 0] + boxes_t[:, 2]) / 2
+        cy = (boxes_t[:, 1] + boxes_t[:, 3]) / 2
+        cx_norm = (cx / img_w - 0.5) * 2
+        cy_norm = (cy / img_h - 0.5) * 2
+        
+        grid = torch.stack([cx_norm, cy_norm], dim=-1).view(1, 1, -1, 2)
+        
+        sampled = F.grid_sample(
+            feature_map, grid, 
+            mode='bilinear', 
+            align_corners=False,
+            padding_mode='border'
+        )
+        
+        per_box_features = sampled.squeeze(0).squeeze(1).T
+        return per_box_features
+
+    def forward_head_on_features(
+        self, 
+        features: torch.Tensor, 
+        scale_idx: int = -1
+    ) -> tuple:
+        if self.model is None:
+            return None, None
+        
+        if features is None or len(features) == 0:
+            return None, None
+        
+        detect = self.model.model.model[-1]
+        device = features.device
+        
+        if features.dim() == 2:
+            features = features.unsqueeze(-1).unsqueeze(-1)
+        
+        feat_channels = features.shape[1]
+        if scale_idx == -1:
+            channel_to_scale = {128: 0, 256: 1, 512: 2}
+            scale_idx = channel_to_scale.get(feat_channels, 2)
+        
+        bbox_out = features.clone()
+        for layer in detect.cv2[scale_idx]:
+            bbox_out = layer(bbox_out)
+        
+        cls_out = features.clone()
+        for layer in detect.cv3[scale_idx]:
+            cls_out = layer(cls_out)
+        
+        N = features.shape[0]
+        cls_output = cls_out.view(N, -1)
+        
+        bbox_raw = bbox_out.view(N, -1)
+        reg_max = detect.reg_max
+        if bbox_raw.shape[1] == 4 * reg_max:
+            bbox_reshaped = bbox_raw.view(N, 4, reg_max)
+            bbox_softmax = F.softmax(bbox_reshaped, dim=2)
+            arange = torch.arange(reg_max, dtype=torch.float32, device=device)
+            bbox_decoded = (bbox_softmax * arange).sum(dim=2)
+        else:
+            bbox_decoded = bbox_raw[:, :4] if bbox_raw.shape[1] >= 4 else bbox_raw
+        
+        return cls_output, bbox_decoded
+
+    def get_regression_weight_vector(self) -> torch.Tensor:
+        if self.model is None:
+            return torch.zeros(64)
+        
+        detect = self.model.model.model[-1]
+        
+        weights = []
+        for cv2_branch in detect.cv2:
+            final_conv = cv2_branch[-1]
+            w = final_conv.weight.data
+            w_summed = w.sum(dim=(2, 3)).flatten(1).mean(dim=0)
+            weights.append(w_summed)
+        
+        avg_weight = torch.stack(weights).mean(dim=0)
+        return avg_weight
         
     def _extract_features_from_feature_maps(self, image_shape: tuple) -> Optional[np.ndarray]:
         if not self._feature_maps:
@@ -529,9 +631,17 @@ class YOLOModel(BaseModel):
             val=False,
             **kwargs
         )
-        best_path = Path(save_dir) / "weights" / "best.pt" # type: ignore
-        print(f"Training completed. Best model path: {best_path}")
-        self.model_path = str(best_path)
+        self.metrics = results
+        best_path = Path(save_dir) / "weights" / "best.pt"
+        last_path = Path(save_dir) / "weights" / "last.pt"
+        if best_path.exists():
+            model_path = best_path
+        elif last_path.exists():
+            model_path = last_path
+        else:
+            model_path = best_path
+        print(f"Training completed. Best model path: {model_path}")
+        self.model_path = str(model_path)
         self.is_trained = True
         
         return self

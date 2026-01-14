@@ -7,6 +7,7 @@ import numpy as np
 import yaml
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
+from loguru import logger
 from .dataset import ALDataset
 
 
@@ -52,6 +53,24 @@ class DataManager:
             model_name=model_name,
             initial_labeled_count=len(initial_labeled_indices)
         )
+        
+        selectionlog_file = self.current_experiment_dir / os.environ.get("SELECTION_LOGFILE", "selection_log.txt")
+        initial_basenames = [
+            self.original_dataset.all_images[idx].name for idx in initial_labeled_indices
+        ]
+        with open(selectionlog_file, 'w') as f:
+            f.write(','.join(initial_basenames) + '\n')
+        print(f"Write initial selection to log file: {selectionlog_file.absolute()}")
+        
+        selection_dir = self.current_experiment_dir / "round_0" / "selection"
+        selection_dir.mkdir(parents=True, exist_ok=True)
+        for idx in initial_labeled_indices:
+            img_path = self.original_dataset.all_images[idx]
+            symlink_path = selection_dir / img_path.name
+            if symlink_path.exists():
+                symlink_path.unlink()
+            os.symlink(img_path.resolve(), symlink_path)
+        print(f"Created {len(initial_labeled_indices)} symlinks in {selection_dir}")
         
         print(f"Created experiment: {experiment_name}")
         print(f"Initial labeled samples: {len(initial_labeled_indices)}")

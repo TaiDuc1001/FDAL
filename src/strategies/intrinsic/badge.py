@@ -36,7 +36,6 @@ class BADGEStrategy(BaseStrategy):
               unlabeled_indices: np.ndarray,
               image_paths: List[str],
               n_samples: int,
-
               **kwargs) -> np.ndarray:
         timelog_file = Path(self.experiment_dir) / os.environ["TIME_LOGFILE"] # type: ignore
         if not timelog_file.exists():
@@ -136,6 +135,21 @@ class BADGEStrategy(BaseStrategy):
         with open(selectionlog_file, 'a') as f:
             f.write(','.join(selected_image_names) + '\n')
         print("Write to selection log file. ", selectionlog_file.absolute())
+
+        self._save_predictions_for_selection(
+            experiment_dir=self.experiment_dir,
+            round_num=self.round,
+            selected_image_paths=selected_image_paths,
+            image_paths=image_paths,
+            selected_indices=np.array(selected_global),
+            results=results,
+            unlabeled_indices=unlabeled_indices,
+        )
+        self._save_selection_symlinks(
+            experiment_dir=self.experiment_dir,
+            round_num=self.round,
+            selected_image_paths=selected_image_paths,
+        )
 
         return np.array(selected_global)
     

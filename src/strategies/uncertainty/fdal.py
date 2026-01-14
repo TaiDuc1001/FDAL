@@ -242,7 +242,7 @@ def train_ddp_worker_standalone(rank: int, labeled_crop_info: Dict[str, Any], dd
             dist.destroy_process_group()
 
 
-class FeDAL(BaseStrategy):
+class FDAL(BaseStrategy):
     def __init__(self,
                  model,
                  supporter: str = "resnet18",
@@ -264,6 +264,8 @@ class FeDAL(BaseStrategy):
                  master_port: int = 12355,
                  backend: str = "nccl",
                  seed: int = 42,
+                 prev_score_file: Optional[str] = None,
+                 use_disu: bool = False,
                  **kwargs):
         super().__init__(model, **kwargs)
         print(type(self.model))
@@ -279,6 +281,8 @@ class FeDAL(BaseStrategy):
         self.one_alpha_cap = one_alpha_cap
         self.experiment_dir = experiment_dir
         self.round = round
+        self.prev_score_file = prev_score_file
+        self.use_disu = use_disu
         
         self.device_config = device
         self.seed = seed
@@ -302,10 +306,10 @@ class FeDAL(BaseStrategy):
             print(f"Warning: train_ddp=True but only {len(self.devices)} device(s) available. Falling back to single device training.")
         
         if self.use_ddp:
-            print(f"FeDAL will use DDP training with {len(self.devices)} devices: {self.devices}")
+            print(f"FDAL will use DDP training with {len(self.devices)} devices: {self.devices}")
             print(f"DDP config: master_addr={self.master_addr}, master_port={self.master_port}, backend={self.backend}")
         else:
-            print(f"FeDAL will use single device training on: {self.device}")
+            print(f"FDAL will use single device training on: {self.device}")
         
     def _setup_devices(self, device: Union[str, List[str]]) -> List[torch.device]:
         if isinstance(device, list):
@@ -362,7 +366,7 @@ class FeDAL(BaseStrategy):
         unlabeled_image_paths = self._get_image_paths_for_indices(unlabeled_indices, image_paths)
         unlabeled_image_paths = unlabeled_image_paths if num_inf < 0 else unlabeled_image_paths[:num_inf]
         
-        print(f"Running FeDAL strategy on {len(unlabeled_image_paths)} unlabeled images...")
+        print(f"Running FDAL strategy on {len(unlabeled_image_paths)} unlabeled images...")
         
         print("Step 1: Running YOLO inference for object detection...")
         start_time = time.time()
@@ -393,14 +397,15 @@ class FeDAL(BaseStrategy):
             train_end_time = time.time()
             train_time = train_end_time - train_start_time
             
-            print("Step 5: Applying FeDAL selection algorithm...")
-            selected_local_indices = self._apply_alfi_selection(
+            print("Step 5: Applying FDAL selection algorithm...")
+            selected_local_indices = self._apply_fdal_selection(
                 crop_info, unlabeled_image_paths, n_samples, labeled_crop_info=labeled_crop_info, **kwargs
             )
+            
             end_time = time.time()
             num_ulbl_images = len(unlabeled_image_paths)
             time_per_image = (end_time - start_time - train_time) / num_ulbl_images if num_ulbl_images > 0 else 0
-            print(f"FeDAL selection completed in {end_time - start_time:.2f}s, num images: {num_ulbl_images}, time per image: {time_per_image:.4f}s")
+            print(f"FDAL selection completed in {end_time - start_time:.2f}s, num images: {num_ulbl_images}, time per image: {time_per_image:.4f}s")
             with open(timelog_file, 'a') as f:
                 f.write(f"{self.round},{end_time - start_time:.2f},{num_ulbl_images},{time_per_image:.4f}\n")
             print("Write to time log file. ", timelog_file.absolute())
@@ -412,7 +417,23 @@ class FeDAL(BaseStrategy):
             with open(selectionlog_file, 'a') as f:
                 f.write(','.join(selected_image_names) + '\n')
             print("Write to selection log file. ", selectionlog_file.absolute())
-
+            
+            selected_image_paths = [image_paths[idx] for idx in selected_indices]
+            self._save_predictions_for_selection(
+                experiment_dir=self.experiment_dir,
+                round_num=self.round,
+                selected_image_paths=selected_image_paths,
+                image_paths=image_paths,
+                selected_indices=selected_indices,
+                results=results,
+                unlabeled_indices=unlabeled_indices,
+            )
+            self._save_selection_symlinks(
+                experiment_dir=self.experiment_dir,
+                round_num=self.round,
+                selected_image_paths=selected_image_paths,
+            )
+            
             return selected_indices
             
         finally:
@@ -421,10 +442,10 @@ class FeDAL(BaseStrategy):
                 
     def _create_temp_crops_dir(self) -> Path:
         if self.experiment_dir and self.round is not None:
-            temp_dir = Path(self.experiment_dir) / f"round_{self.round}" / "alfi_crops"
+            temp_dir = Path(self.experiment_dir) / f"round_{self.round}" / "fdal_crops"
             temp_dir.mkdir(parents=True, exist_ok=True)
         else:
-            temp_dir = Path(tempfile.mkdtemp(prefix="alfi_crops_"))
+            temp_dir = Path(tempfile.mkdtemp(prefix="fdal_crops_"))
         return temp_dir
     
     def _crop_and_save_objects(self, image_paths: List[str], results: List, temp_dir: Path) -> Dict[str, Any]:
@@ -774,6 +795,10 @@ class FeDAL(BaseStrategy):
         
         if val_crop_info['crop_paths']:
             self._cleanup_labeled_crops(val_crop_info['crop_paths'])
+        
+        model_save_path = self._get_ddp_model_save_path(0)
+        torch.save(self.supporter_model.state_dict(), model_save_path)
+        print(f"Saved supporter model to {model_save_path}")
     
     def _train_supporter_ddp(self, labeled_crop_info: Dict[str, Any], unlabeled_crop_info: Dict[str, Any]):
         try:
@@ -868,7 +893,7 @@ class FeDAL(BaseStrategy):
         except Exception as e:
             print(f"Warning: Failed to clean up some labeled crop files: {e}")
     
-    def _apply_alfi_selection(self, crop_info: Dict[str, Any], image_paths: List[str], 
+    def _apply_fdal_selection(self, crop_info: Dict[str, Any], image_paths: List[str], 
                                 n_samples: int, labeled_crop_info: Optional[Dict[str, Any]] = None, **kwargs) -> np.ndarray:
         
         if self.supporter_model is None:
@@ -894,13 +919,16 @@ class FeDAL(BaseStrategy):
             supporter_embeddings, supporter_probs, yolo_labels, crop_info, len(image_paths), labeled_embeddings, labeled_labels
         )
         
+        if self.use_disu:
+            unlabeled_indices = np.arange(len(image_paths))
+            self._write_scores_for_disu(crop_info, unlabeled_indices, image_changes_list)
+        
         print(f"Found {np.sum(candidate_crops)} candidate crops with prediction inconsistencies")
         supporter_probs_all, _ = self._get_supporter_predictions(crop_info)
         entropies = -np.sum(supporter_probs_all * np.log(supporter_probs_all + 1e-8), axis=1)
         print(f"Computed entropy for {len(entropies)} crops (mean entropy: {np.mean(entropies):.4f})")
         second_scores = np.where(candidate_crops, -np.inf, entropies)
         
-        # Aggregate to image level
         if np.sum(candidate_crops) > 0:
             candidate_crop_indices = np.where(candidate_crops)[0]
         else:
@@ -922,7 +950,6 @@ class FeDAL(BaseStrategy):
             uncertain_indices = np.argsort(image_scores)[-num_uncertain:]
             remaining = n_samples - num_uncertain
             
-            # Compute image_max_entropy for images with image_scores == 0
             image_max_entropy = np.full(len(image_paths), -np.inf)
             for crop_idx in range(len(second_scores)):
                 if second_scores[crop_idx] > -np.inf:
@@ -1237,7 +1264,7 @@ class FeDAL(BaseStrategy):
                 flip_percentage = (flip_count / total_flips) * 100 if total_flips > 0 else 0.0
                 classwise_quality.append(flip_percentage)
         
-            save_path = Path(self.experiment_dir) / f"round_{self.round}" / "alfi_classwise_quality.npy"
+            save_path = Path(self.experiment_dir) / f"round_{self.round}" / "fdal_classwise_quality.npy"
             save_path.parent.mkdir(parents=True, exist_ok=True)
             np.save(save_path, np.array(classwise_quality))
             
@@ -1246,5 +1273,40 @@ class FeDAL(BaseStrategy):
             print(f"Classwise quality (flip percentages): {classwise_quality}")
             print(f"Saved classwise quality to {save_path}")
 
+    def _write_scores_for_disu(self, crop_info: Dict[str, Any], unlabeled_indices: np.ndarray, 
+                              image_changes_list: List[np.ndarray]) -> None:
+        if not self.use_disu or not self.prev_score_file:
+            return
+        
+        if not (self.experiment_dir and self.round is not None):
+            print("Warning: Cannot write DiSu scores without experiment_dir and round")
+            return
+        
+        round_dir = Path(self.experiment_dir) / f"round_{self.round}"
+        round_dir.mkdir(parents=True, exist_ok=True)
+        score_file_path = round_dir / self.prev_score_file
+        
+        print(f"Writing DiSu scores to {score_file_path}")
+        
+        with open(score_file_path, 'w') as f:
+            f.write("image_id,object_id,score\n")
+            
+            for img_idx, global_img_idx in enumerate(unlabeled_indices):
+                if img_idx in crop_info.get('image_to_crops', {}):
+                    crops_for_image = crop_info['image_to_crops'][img_idx]
+                    
+                    total_flips = 0
+                    for changes in image_changes_list:
+                        if img_idx < len(changes):
+                            total_flips += changes[img_idx]
+                    
+                    for obj_idx in range(len(crops_for_image)):
+                        f.write(f"{global_img_idx},{obj_idx},{total_flips}\n")
+                else:
+                    f.write(f"{global_img_idx},0,0\n")
+                    print(f"Warning: No crops found for image index {img_idx} (global index {global_img_idx})")
+        
+        print(f"Successfully wrote scores for {len(unlabeled_indices)} images to {score_file_path}")
+
     def get_strategy_name(self) -> str:
-        return "alfi"
+        return "fdal"

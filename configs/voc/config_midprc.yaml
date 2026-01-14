@@ -1,6 +1,6 @@
 dataset_yaml: "datasets/VOC/data.yaml"
 epochs: 26
-batch_size: 16
+batch_size: 32
 val_batch_size: 256
 imgsz: 640
 device: ['0']
@@ -9,11 +9,11 @@ master_addr: "localhost"
 master_port: 12355
 backend: "nccl"
 patience: 50
-experiments_root: "full_experiments/experiments_3010/voc_divproto"
-proctitle_midstr: "voc_divproto"
+experiments_root: "full_experiments/experiments_0301/voc_midprc"
+proctitle_midstr: "voc_midprc"
 proctitle_endstr_of: "seed"
 seed: 1
-strategy: "divproto"
+strategy: "midprc"
 model_name: "yolo11s.pt"
 initial_labeled_count: 828
 max_rounds: 7
@@ -21,11 +21,10 @@ samples_per_round: 414
 num_inference: 6000
 
 strategy_args:
-  divproto:
-    tenms: 0.5
-    tintra: 0.7
-    tinter: 0.3
-    alpha: 0.5
-    beta: 0.75
-    conf_threshold: 0.25
-    feature_layers: ["model.9", "model.10"]
+  midprc:
+    epsilon: 5.0
+    lambda_weight: 1.0
+    conf_threshold: 0.05
+    iou_threshold: 0.5
+    similarity_threshold: 0.85
+    feature_dim: 512

@@ -9,7 +9,7 @@ master_addr: "localhost"
 master_port: 12355
 backend: "nccl"
 patience: 50
-experiments_root: "full_experiments/experiments_1210/coco_fdal"
+experiments_root: "full_experiments/experiments_3010/coco_fdal"
 proctitle_midstr: "coco_fdal"
 proctitle_endstr_of: "seed"
 seed: 1

@@ -96,6 +96,21 @@ class EntropyStrategy(BaseStrategy):
             f.write(','.join(selected_image_names) + '\n')
         print("Write to selection log file. ", selectionlog_file.absolute())
         
+        self._save_predictions_for_selection(
+            experiment_dir=self.experiment_dir,
+            round_num=self.round,
+            selected_image_paths=selected_image_paths,
+            image_paths=image_paths,
+            selected_indices=selected_indices,
+            results=results,
+            unlabeled_indices=unlabeled_indices,
+        )
+        self._save_selection_symlinks(
+            experiment_dir=self.experiment_dir,
+            round_num=self.round,
+            selected_image_paths=selected_image_paths,
+        )
+        
         return selected_indices
     
     def get_strategy_name(self) -> str:
